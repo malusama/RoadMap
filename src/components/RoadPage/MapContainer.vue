@@ -7,7 +7,7 @@
 
 <script>
 import Searchbar from "./SearchBar.vue";
-import index from "../../../node_modules/_vue@2.5.16@vue";
+import index from "../../../node_modules/vue";
 export default {
   name: "Mapcontainer",
   components: {
@@ -17,7 +17,8 @@ export default {
     return {
       count: 0,
       /*地图对象*/
-      map: {}
+      map: {},
+      zeroPlace: []
     };
   },
   created: function() {
@@ -221,16 +222,47 @@ export default {
   },
   mounted: function() {
     /*Create Map*/
-    let map = new AMap.Map("map", {
-      resizeEnable: true,
-      zoom: 11,
-      center: [116.397428, 39.90923],
-      animateEnable: true,
-      mapStyle: "amap://styles/fe7d1f157e05c97d6930995928e4f39d"
+    
+    // let map = new AMap.Map("map", {
+    //   resizeEnable: true,
+    //   zoom: 11,
+    //   center: [116.397428, 39.90923],
+    //   animateEnable: true,
+    //   mapStyle: "amap://styles/fe7d1f157e05c97d6930995928e4f39d"
+    // });
+    // map.setCity('深圳市');
+
+    let map = new google.maps.Map(document.getElementById('map'), {
+      center: {lat: 35.41, lng: 139.41},
+      zoom: 10,
+      mapTypeId: google.maps.MapTypeId.ROADMAP,
     });
-    map.setCity(this.$store.state.city);
+    // let geocoder = new google.maps.Geocoder();
+
+    // geocoder.geocode( { 'address': this.$store.state.city}, function(results, status) {
+    //   if (status == 'OK') {
+    //     map.setCenter(results[0].geometry.location);
+    //     let marker = new google.maps.Marker({
+    //         map: map
+    //         // position: results[0].geometry.location
+    //     });
+    //   } else {
+    //     alert('Geocode was not successful for the following reason: ' + status);
+    //   }
+    // });
+    // that.address(this.$store.state.city);
     this.map = map; //全局保存map
 
+    // axios.get('https://zero.littlekey.me/places',{params:{
+    // 	city_name:"東京市"
+    // }}).them(function(response) {
+    // 	console.log(response.data),
+    // 	this.zeroPlace = response.data[items]
+    // }.bind(this));
+    // console.log(this.zeroPlace);
+
+
+    
     /*初始化地点搜索插件*/
     let searchConfig = this.$store.state.AMap_PlaceSearch.config;
     let search = new AMap.PlaceSearch(searchConfig);
@@ -240,18 +272,30 @@ export default {
     });
 
     /*绑定热点单击事件*/
-    let that = this;
-    let hpclick = map.on("hotspotclick", function(event) {
-      that.createInfoWindow(event);
+    let marker = new google.maps.Marker({
+    	position:{lat: 35.41, lng: 139.41},
     });
+    marker.setMap(map);
+
+    let infowindow = new google.maps.InfoWindow({
+    	content:"Hello World!"
+    });
+
+    let that = this;
+    let hpclick = marker.addListener('click', function(event) {
+    	that.createInfoWindow(map, marker, event);
+    	// infowindow.open(map, marker);
+    })
+    // let hpclick = map.on("hotspotclick", function(event) {
+    //   that.createInfoWindow(event);
+    // });
 
     /* 从本地导入 */
     if (this.$store.state.storge.localData) {
       this.$emit("setLoading", true);
       let src = this.$store.state.storge.localData;
       let searchTool = new AMap.PlaceSearch({
-        city: src.city,
-        extensions: 'all'
+        city: src.city
       });
       function importNode(local_node, pre_node, search_tool) {
         return new Promise((resolve, reject) => {
@@ -318,11 +362,28 @@ export default {
     /*end 导入 */
   },
   methods: {
+
+    codeAddress: function(address) {
+      console.log(address)
+      // var address = document.getElementById('address').value;
+      geocoder.geocode( { 'address': address}, function(results, status) {
+        if (status == 'OK') {
+          map.setCenter(results[0].geometry.location);
+          var marker = new google.maps.Marker({
+            map: map,
+            position: results[0].geometry.location
+          });
+        } else {
+          alert('Geocode was not successful for the following reason: ' + status);
+        }
+      });
+    },
+
     /**
      * @description 创建点击热点信息窗体
      * @param {AMP click event} event 点击地图触发的事件对象
      */
-    createInfoWindow: function(event) {
+    createInfoWindow: function(map, marker, event) {
       let infoDiv = document.createElement("div");
       let InfoWindowDemo =
         '<div id="infoWindow">\
@@ -341,16 +402,23 @@ export default {
       let that = this;
       infoDiv.querySelector("#infoAction").onclick = function(e) {
         that.addPOIToData(event);
+        console.log('test');
       };
 
-      let infoWindow = new AMap.InfoWindow({
-        isCustom: true, //使用自定义窗体
-        content: infoDiv,
-        offset: new AMap.Pixel(0, -10),
-        closeWhenClickMap: true,
-        autoMove: true
+      // let infoWindow = new AMap.InfoWindow({
+      //   isCustom: true, //使用自定义窗体
+      //   content: infoDiv,
+      //   offset: new AMap.Pixel(0, -10),
+      //   closeWhenClickMap: true,
+      //   autoMove: true
+      // });
+
+      let infoWindow = new google.maps.InfoWindow({
+      	content: infoDiv,
+      	isCustom: true
       });
-      infoWindow.open(this.map, event.lnglat);
+
+      infoWindow.open(map, marker);	
     },
     /**
      * @description 根据type将result的路径画出

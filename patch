@@ -1,0 +1,13 @@
+diff --git a/src/components/RoadPage/MapContainer.vue b/src/components/RoadPage/MapContainer.vue
+index 79ccd87..7e2b30b 100644
+--- a/src/components/RoadPage/MapContainer.vue
++++ b/src/components/RoadPage/MapContainer.vue
+@@ -7,7 +7,7 @@
+ 
+ <script>
+ import Searchbar from "./SearchBar.vue";
+-import index from "../../../node_modules/_vue@2.5.16@vue";
++import index from "../../../node_modules/vue";
+ export default {
+   name: "Mapcontainer",
+   components: {
